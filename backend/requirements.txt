@@ -23,3 +23,4 @@ langchain_core==0.3.79
 langchain_community==0.3.27
 langsmith==0.4.40
 langchain_groq==0.3.6
+email-validator
