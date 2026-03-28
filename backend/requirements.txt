@@ -24,3 +24,4 @@ langchain_community==0.3.27
 langsmith==0.4.40
 langchain_groq==0.3.6
 pydantic[email]
+scikit-learn==1.4.0 
