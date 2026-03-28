@@ -56,22 +56,28 @@ class ChatResponse(BaseModel):
 
 
 async def call_groq(message: str, role: str) -> dict:
-    """Call Groq API for intent detection."""
-    try:
-        from groq import Groq
-        client = Groq(api_key=settings.GROQ_API_KEY)
+    """Call Groq API via LangChain for intent detection."""
+    api_key = settings.GROQ_API_KEY
+    if not api_key:
+        return fallback_intent(message, role)
 
-        response = client.chat.completions.create(
+    try:
+        from langchain_groq import ChatGroq
+        from langchain_core.messages import SystemMessage, HumanMessage
+
+        llm = ChatGroq(
             model="llama3-8b-8192",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT.replace("{role}", role)},
-                {"role": "user", "content": message},
-            ],
+            api_key=api_key,
             temperature=0.3,
             max_tokens=500,
         )
 
-        text = response.choices[0].message.content.strip()
+        response = llm.invoke([
+            SystemMessage(content=SYSTEM_PROMPT.replace("{role}", role)),
+            HumanMessage(content=message),
+        ])
+
+        text = response.content.strip()
 
         # Extract JSON from response
         json_match = re.search(r'\{.*\}', text, re.DOTALL)
@@ -79,7 +85,7 @@ async def call_groq(message: str, role: str) -> dict:
             return json.loads(json_match.group())
         return {"intent": "general", "reply": text, "data": {}}
 
-    except Exception as e:
+    except Exception:
         # Fallback: simple keyword-based intent detection
         return fallback_intent(message, role)
 
